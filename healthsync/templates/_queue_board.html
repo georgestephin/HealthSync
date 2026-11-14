@@ -1,0 +1,11 @@
+{% from "_icons.html" import dept_class %}
+<div class="board-grid">
+  {% for b in board %}
+  <article class="qtile {{ dept_class(b.specialty) }} {{ 'idle' if not b.serving_token and not b.waiting }}">
+    <h3>{{ b.name }}</h3><p class="sp">{{ b.specialty }}</p>
+    <div class="serve"><span>Now serving</span><b>{{ '%02d' | format(b.serving_token) if b.serving_token else '–' }}</b></div>
+    <p class="qfoot">{% if b.waiting %}<strong>{{ b.waiting }}</strong> waiting, about {{ b.est }} min for a new arrival{% elif b.serving_token %}No one else waiting{% else %}No queue right now{% endif %}</p>
+  </article>
+  {% else %}<p class="empty">No doctors are listed yet.</p>{% endfor %}
+</div>
+<p class="updated">Updated {{ updated }}. Token numbers only, to protect patient privacy.</p>

@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% from "claims/_macros.html" import problem %}{% block title %}My coverage{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>My coverage</h1><p>Link your private insurance policy or Ayushman Bharat card so your doctor can ask for treatment approval.</p></div></section>
+<div class="wrap page"><div class="split">
+  <form method="post" class="card form" novalidate>
+    <h2>{{ 'Verify another policy' if cov else 'Verify your coverage' }}</h2>
+    {{ problem(error) }}
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field"><label>Coverage type</label><div class="choices">
+      <label class="check"><input type="radio" name="type" value="TPA" {{ 'checked' if form.get('type', 'TPA') == 'TPA' }}> Private insurance (TPA)</label>
+      <label class="check"><input type="radio" name="type" value="AYUSHMAN" {{ 'checked' if form.get('type') == 'AYUSHMAN' }}> Ayushman Bharat</label></div></div>
+    <div class="field"><label for="f-ref">Policy number or card number<span class="req"> *</span></label>
+      <input id="f-ref" name="ref" value="{{ form.get('ref', '') }}" required placeholder="TPA-1001 or PMJAY-1001" autocomplete="off"><small class="err" data-for="ref" role="alert"></small></div>
+    <button class="btn primary block">Verify</button>
+  </form>
+  <section>
+  {% if cov %}<article class="card covcard">
+    {% if cov.coverageType == 'TPA' %}
+      <h2>Private insurance (TPA) {% if cov.isActive %}<span class="badge b-confirmed">Active</span>{% else %}<span class="badge b-cancelled">Inactive</span>{% endif %}</h2>
+      {% if not cov.isActive and cov.inactiveReason %}<p class="muted">{{ cov.inactiveReason }}</p>{% endif %}
+      <dl class="kv"><div><dt>Policy holder</dt><dd>{{ cov.holderName }}</dd></div><div><dt>Insurer</dt><dd>{{ cov.insurerName }}</dd></div><div><dt>TPA</dt><dd>{{ cov.tpaName }}</dd></div>
+        <div><dt>Policy number</dt><dd>{{ cov.coverageRef }}</dd></div><div><dt>Sum insured</dt><dd>{{ cov.sumInsured | inr }}</dd></div><div><dt>Balance</dt><dd>{{ cov.balance | inr }}</dd></div>
+        <div><dt>Co-pay</dt><dd>{{ cov.coPayPercent }}%</dd></div><div><dt>Valid till</dt><dd>{{ cov.validTill }}</dd></div></dl>
+    {% else %}
+      {% set pct = (cov.usedAmount / cov.annualLimit * 100) | round if cov.annualLimit else 0 %}
+      <h2>Ayushman Bharat <span class="badge b-confirmed">Family limit</span></h2>
+      <dl class="kv"><div><dt>Member</dt><dd>{{ cov.memberName }}</dd></div><div><dt>Family id</dt><dd>{{ cov.familyId }}</dd></div><div><dt>Head of family</dt><dd>{{ cov.headName }}</dd></div>
+        <div><dt>Card number</dt><dd>{{ cov.coverageRef }}</dd></div><div><dt>Yearly limit</dt><dd>{{ cov.annualLimit | inr }}</dd></div><div><dt>Remaining</dt><dd>{{ cov.remaining | inr }}</dd></div></dl>
+      <div class="meter {{ 'hot' if pct >= 90 }}" role="img" aria-label="{{ pct }} percent of the yearly limit used"><i style="width:{{ pct }}%"></i></div>
+      <p class="small muted">{{ cov.usedAmount | inr }} used of {{ cov.annualLimit | inr }}. The limit is shared by the whole family.</p>
+      <h3>Family members</h3><ul class="plain">{% for m in cov.members %}<li>{{ m.name }} <span class="muted">({{ m.cardNo }})</span></li>{% endfor %}</ul>
+    {% endif %}
+  </article>{% else %}<article class="card"><h2>No coverage yet</h2><p class="muted">Verify a policy or card on the left. Until then, treatments are paid by you.</p></article>{% endif %}
+  </section>
+</div></div>{% endblock %}

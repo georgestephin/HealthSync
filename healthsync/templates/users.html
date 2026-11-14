@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% from "_macros.html" import fields_html %}{% block title %}Users{% endblock %}
+{% block content %}<section class="banner"><div class="wrap"><h1>Users and roles</h1><p>{% if user.role == 'superadmin' %}Super admins can assign any role and use <strong>View as</strong> to see the app as any patient, doctor or admin.{% else %}Admins can manage patient and doctor accounts. Only super admins can change admin roles.{% endif %}</p></div></section>
+<div class="wrap page">
+  <div class="split">
+    <form method="post" class="card form" novalidate><h2>Create a user</h2>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">{{ fields_html(fields, vals, errs) }}<button class="btn primary">Create user</button></form>
+    <section class="card tablecard"><input type="search" class="filter" data-table="#t" placeholder="Filter users" aria-label="Filter users">
+      <div class="scroll"><table id="t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead><tbody>
+      {% for r in rows %}{% set locked = r.id == user.id or r.role not in assignable %}
+      <tr><td data-label="Name">{{ r.name }}</td><td data-label="Email">{{ r.email }}</td>
+      {% if locked %}<td data-label="Role"><em class="role r-{{ r.role }}">{{ r.role }}</em></td><td data-label="Active">{{ 'Yes' if r.active else 'No' }}</td><td class="muted">{{ 'You' if r.id == user.id else 'Protected' }}</td>
+      {% else %}<td data-label="Role" colspan="2"><form method="post" class="inline-edit"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ r.id }}">
+        <select name="role" aria-label="Role for {{ r.name }}">{% for ro in roles %}<option {{ 'selected' if ro == r.role }}>{{ ro }}</option>{% endfor %}</select>
+        <label class="check"><input type="checkbox" name="active" {{ 'checked' if r.active }}> Active</label>
+        <button name="_action" value="update" class="btn sm primary">Save</button></form></td>
+        <td class="acts">{% if user.role == 'superadmin' and r.role != 'superadmin' and r.active %}<form method="post" action="{{ url_for('admin.view_as') }}" class="inline"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ r.id }}">
+          <button class="btn sm" title="See the app exactly as {{ r.name }} sees it">View as</button></form>{% endif %}</td>{% endif %}</tr>
+      {% endfor %}</tbody></table></div></section>
+  </div>
+</div>{% endblock %}

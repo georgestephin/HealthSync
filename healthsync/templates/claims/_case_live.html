@@ -1,0 +1,26 @@
+{% from "claims/_macros.html" import badge, emergency_badge, chip, payer_name, problem, steps %}
+{{ problem(error) }}
+{% if case %}{% set pre = case.preauth or {} %}{% set claim = case.claim %}
+<section class="card"><div class="row"><h2 style="margin:0">{{ case.diagnosis }}</h2>{{ emergency_badge(case) }}{{ badge(case) }}</div>
+  <p class="muted">{{ payer_name(case.payerType) }}, reference {{ case.coverageRef }}{% if case.packageCode %}, package {{ case.packageCode }}{% endif %}</p>
+  <dl class="kv"><div><dt>Patient</dt><dd>{{ case.patientName }}</dd></div><div><dt>Doctor</dt><dd>{{ case.doctorName }}</dd></div>
+    <div><dt>Estimated cost</dt><dd>{{ case.estimatedCost | inr }}</dd></div><div><dt>Opened</dt><dd>{{ case.createdAt | stamp }}</dd></div></dl>
+  {{ steps(case) }}
+</section>
+<div class="grid two">
+  <section class="card"><h2>Pre-authorization</h2>
+    <dl class="kv"><div><dt>Status</dt><dd>{{ chip(pre.status) }}</dd></div><div><dt>Requested</dt><dd>{{ pre.requestedAmount | inr }}</dd></div><div><dt>Approved</dt><dd>{{ pre.approvedAmount | inr }}</dd></div>
+      {% if case.isEmergency and pre.postApprovalDue %}<div><dt>Approval due by</dt><dd>{{ pre.postApprovalDue | stamp }}</dd></div>{% endif %}</dl>
+    {% if pre.status in ('QUERY', 'REJECTED') and pre.deskRemarks %}<p class="notice {{ 'bad' if pre.status == 'REJECTED' }}"><strong>{{ 'Desk asks' if pre.status == 'QUERY' else 'Reason' }}:</strong> {{ pre.deskRemarks }}</p>{% endif %}
+    {% if pre.hospitalReply %}<p class="small muted">Hospital reply: {{ pre.hospitalReply }}</p>{% endif %}
+    {% if user.role == 'patient' and pre.status == 'QUERY' %}<p class="small muted">Your doctor is replying to the desk. You do not need to do anything.</p>{% endif %}
+  </section>
+  {% if claim %}<section class="card"><h2>Claim</h2>
+    <dl class="kv"><div><dt>Status</dt><dd>{{ chip(claim.status) }}</dd></div><div><dt>Final bill</dt><dd>{{ claim.finalBill | inr }}</dd></div><div><dt>Non-payable items</dt><dd>{{ claim.nonPayableAmount | inr }}</dd></div>
+      <div><dt>{{ 'Insurer pays' if case.payerType == 'TPA' else 'Scheme pays' }}</dt><dd>{{ claim.payerAmount | inr }}</dd></div>
+      <div><dt>{{ 'You pay' if user.role == 'patient' else 'Patient pays' }}</dt><dd>{{ claim.patientAmount | inr }}</dd></div></dl>
+    {% if claim.rejectionReason %}<p class="notice bad"><strong>Reason:</strong> {{ claim.rejectionReason }}{% if case.payerType %} The patient pays the whole bill.{% endif %}</p>{% endif %}
+  </section>{% endif %}
+</div>
+{% endif %}
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

@@ -1,0 +1,17 @@
+{% from "claims/_macros.html" import chip, problem %}
+{{ problem(error) }}
+<section class="card tablecard">
+{% if rows %}<div class="scroll"><table><thead><tr><th>Id</th><th>Patient</th><th>Diagnosis</th><th>Final bill</th><th>Non-payable</th><th>Payer pays</th><th>Patient pays</th><th>Claim</th><th>Pre-auth</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr>
+  <td data-label="Id">#{{ r.id }}</td><td data-label="Patient">{{ r.case.patientName }}</td><td data-label="Diagnosis">{{ r.case.diagnosis }}</td>
+  <td data-label="Final bill">{{ r.finalBill | inr }}</td><td data-label="Non-payable">{{ r.nonPayableAmount | inr }}</td><td data-label="Payer pays">{{ r.payerAmount | inr }}</td><td data-label="Patient pays">{{ r.patientAmount | inr }}</td>
+  <td data-label="Claim">{{ chip(r.status) }}{% if r.rejectionReason %}<div class="small muted">{{ r.rejectionReason }}</div>{% elif r.settledAt %}<div class="small muted">{{ r.settledAt | stamp }}</div>{% endif %}</td>
+  <td data-label="Pre-auth">{{ chip(r.preauthStatus) }}</td>
+  <td class="acts">{% if r.status == 'SUBMITTED' %}
+    <form method="post" action="{{ url_for('claims.desk_settle', claim_id=r.id) }}" class="inline" data-confirm="Settle this claim? The balance will be deducted."><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ status }}">
+      <button class="btn sm primary" {{ 'disabled title="The pre-authorization must be approved first"' if r.preauthStatus != 'APPROVED' }}>Settle</button></form>
+    <details class="act"><summary class="btn sm danger">Reject</summary><form method="post" action="{{ url_for('claims.desk_reject_claim', claim_id=r.id) }}" class="actform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ status }}">
+      <label>Reason<textarea name="reason" rows="2" required maxlength="300"></textarea></label><button class="btn sm danger">Confirm rejection</button></form></details>{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+{% elif not error %}<p class="empty">Nothing here for this status.</p>{% endif %}
+</section>
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

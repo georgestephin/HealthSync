@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% from "_icons.html" import icon, dept_icon, dept_class, initials %}{% block title %}Services{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Services and departments</h1><p>What we treat, and who to see for it.</p></div></section>
+<div class="wrap page">
+  <h2>What we offer</h2>
+  <ul class="offer">{% for name, desc in services %}<li>{{ icon('check') }}<div><strong>{{ name }}</strong><p>{{ desc }}</p></div></li>{% endfor %}</ul>
+  <h2 class="gap">Departments and their doctors</h2>
+  <div class="grid">{% for sp, docs in groups.items() %}<article class="card dept-card {{ dept_class(sp) }}"><h3>{{ dept_icon(sp) }}<a href="{{ url_for('public.department', slug=sp | lower | replace(' ', '-')) }}">{{ sp }}</a></h3>
+    <ul class="plain">{% for d in docs %}<li class="person"><span class="av av{{ loop.index0 % 4 }}" aria-hidden="true">{{ initials(d.name) }}</span><span><strong>{{ d.name }}</strong><br><span class="muted">{{ d.available_days or 'By appointment' }}, ₹{{ d.fee }}</span></span></li>{% endfor %}</ul></article>{% endfor %}</div>
+  {% if not user or user.role == 'patient' %}<p class="gap"><a class="btn primary" href="{{ url_for('appointments.index') }}">Book an appointment</a></p>{% endif %}
+</div>{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Pre-authorizations{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>{{ title }}: pre-authorizations</h1><p>Approve, ask a question or reject each treatment request.</p></div></section>
+<div class="wrap page">
+  <form method="get" class="qpick"><label for="st">Status</label><select id="st" name="status" data-autosubmit>
+    {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s == status }}>{{ s | title }}</option>{% endfor %}<option value="ALL" {{ 'selected' if status == 'ALL' }}>All</option></select></form>
+  <div data-live="{{ url_for('claims.desk_preauths', partial=1, status=status) }}" data-interval="5000">{% include "claims/_desk_preauths_live.html" %}</div>
+</div>{% endblock %}

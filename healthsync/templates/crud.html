@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% from "_macros.html" import fields_html, badge, action_buttons with context %}{% block title %}{{ c.title }}{% endblock %}
+{% block content %}<section class="banner"><div class="wrap"><h1>{{ c.title }}</h1><p>{{ c.intro }}</p></div></section>
+<div class="wrap page">
+  {% if ward_cards %}<div class="wards">{% for w in ward_cards %}{% set pct = (w.occupied / w.total * 100) | round if w.total else 0 %}
+    <article class="ward"><h3>{{ w.ward }}</h3><p class="free"><b>{{ w.free }}</b> free of {{ w.total }}</p>
+      <div class="meter {{ 'hot' if pct >= 90 }}" role="img" aria-label="{{ pct }} percent occupied"><i style="width:{{ pct }}%"></i></div>{{ badge(w.status) }}</article>{% endfor %}</div>{% endif %}
+  <div class="split{{ '' if c.show_form else ' single' }}">
+    {% if c.show_form %}
+    <form method="post" class="card form" novalidate>
+      <h2>{{ 'Edit record' if edit_id else c.form_title }}</h2>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">{% if edit_id %}<input type="hidden" name="id" value="{{ edit_id }}">{% endif %}
+      {{ fields_html(c.fields, vals, errs) }}
+      <div class="row"><button class="btn primary">{{ 'Save changes' if edit_id else c.submit }}</button>{% if edit_id %}<a class="btn" href="{{ request.path }}">Cancel edit</a>{% endif %}</div>
+    </form>{% endif %}
+    {% if not (ward_cards and not c.show_form) %}<section class="card tablecard" aria-label="{{ c.title }} list">
+      {% if c.rows %}<input type="search" class="filter" data-table="#t" placeholder="Filter this list" aria-label="Filter this list">
+      <div class="scroll"><table id="t"><thead><tr>{% for h, k in c.cols %}<th>{{ h }}</th>{% endfor %}<th></th></tr></thead><tbody>
+        {% for r in c.rows %}<tr>
+          {% for h, k in c.cols %}<td data-label="{{ h }}">{% if k in c.badges %}{{ badge(r[k]) }}{% else %}{{ r[k] if r[k] is not none and r[k] != '' else '–' }}{% endif %}</td>{% endfor %}
+          <td class="acts">{{ action_buttons(r.acts, r.id) }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="empty">{{ c.empty }}</p>{% endif %}
+    </section>{% endif %}
+  </div>
+</div>{% endblock %}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f2a52">
+<title>{% block title %}Home{% endblock %} | HealthSync</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% from "_icons.html" import icon %}
+<a class="skip" href="#main">Skip to content</a>
+{% if viewing_as %}<div class="viewas"><div class="wrap"><span>You are viewing HealthSync as <strong>{{ user.name }}</strong> ({{ user.role }}).</span>
+  <form method="post" action="{{ url_for('admin.stop_view') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm">Return to super admin</button></form></div></div>{% endif %}
+<div class="utility"><div class="wrap">
+  <a class="emerg" href="tel:112">{{ icon('phone') }}Emergency <strong>112</strong></a>
+  <span class="hide-sm">Helpline 011-4000-0000</span>
+  <span class="hide-sm">Open 24 hours, every day</span>
+  <span class="grow"></span>
+  {% if user %}<span>Signed in as {{ user.name }}</span>{% else %}<a href="{{ url_for('auth.login') }}">Patient login</a>{% endif %}
+</div></div>
+<header class="mainbar">
+  <div class="wrap bar">
+    <a class="brand" href="{{ url_for('public.index') }}" aria-label="HealthSync home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M4 17h6l3-8 5 15 3-7h7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Health<b>Sync</b></span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav id="nav" class="links" aria-label="Main">
+      {% for label, ep in [('Services','public.services'),('Doctors','records.doctors'),('Live queue','queue.board'),('Bed availability','records.beds')] %}{% if ep != 'queue.board' or (user and user.role in ('patient','doctor','superadmin')) %}
+      <a href="{{ url_for(ep) }}" {% if request.endpoint == ep %}aria-current="page"{% endif %}>{{ label }}</a>{% endif %}{% endfor %}
+      <span class="sp"></span>
+      {% if user %}
+      <span class="who"><em class="role r-{{ user.role }}">{{ user.role }}</em></span>
+      <form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn sm">Log out</button></form>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}">Log in</a><a class="btn primary" href="{{ url_for('auth.register') }}">Register</a>
+      {% endif %}
+    </nav>
+  </div>
+  {% if menu %}<nav class="sub" aria-label="Portal"><div class="wrap">
+    {% for label, ep in menu %}<a href="{{ url_for(ep) }}" {% if request.endpoint == ep %}aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
+  </div></nav>{% endif %}
+</header>
+<main id="main">
+  {% with msgs = get_flashed_messages(with_categories=true) %}{% if msgs %}<div class="wrap flashes">
+    {% for cat, m in msgs %}<div class="flash {{ cat }}" role="status">{{ m }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="foot"><div class="wrap foot-grid">
+  <div><p class="foot-brand">HealthSync</p><p>HealthSync is a platform for booking appointments, following your place in the queue and checking bed availability.</p></div>
+  <div><h3>For patients</h3><ul>{% if not user or user.role == 'patient' %}<li><a href="{{ url_for('appointments.index') }}">Book an appointment</a></li>{% endif %}<li><a href="{{ url_for('records.doctors') }}">Find a doctor</a></li>
+    <li><a href="{{ url_for('records.beds') }}">Bed availability</a></li>
+    <li><a href="{{ url_for('public.services') }}">Our services</a></li></ul></div>
+  <div><h3>Your account</h3><ul>{% if user %}<li><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>{% if user.role not in ('tpa_desk','pmjay_desk') %}<li><a href="{{ url_for('feedback.index') }}">Feedback</a></li>{% endif %}
+    {% else %}<li><a href="{{ url_for('auth.login') }}">Log in</a></li><li><a href="{{ url_for('auth.register') }}">Create an account</a></li>{% endif %}</ul></div>
+  <div><h3>Contact</h3><p>Reception 011-4000-0000<br>Emergency <strong>112</strong><br>Open 24 hours, every day</p></div>
+</div>
+<div class="wrap foot-base">Minor project demo. All data shown is sample data.</div></footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body></html>

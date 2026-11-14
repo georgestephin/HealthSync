@@ -1,0 +1,71 @@
+{% from "_icons.html" import icon %}
+{% if mode == 'patient' %}
+  {% for e in entries %}
+  <article class="ticket {{ 'serving' if e.status == 'In consultation' }}">
+    <div class="ticket-token"><span>Your token</span><b>{{ '%02d' | format(e.token) }}</b></div>
+    <div class="ticket-body">
+      <h2>{{ e.doctor }}</h2><p class="muted">{{ e.specialty }}</p>
+      {% if e.status == 'In consultation' %}
+        <p class="callout">It is your turn. Please go to the consultation room now.</p>
+      {% else %}
+        <div class="qstats">
+          <div><b>{{ e.ahead }}</b><span>{{ 'person' if e.ahead == 1 else 'people' }} ahead of you</span></div>
+          <div><b>{{ '%02d' | format(e.serving_token) if e.serving_token else '–' }}</b><span>Now serving</span></div>
+          <div><b>{{ 'Next' if e.est == 0 else '~' ~ e.est }}</b><span>{{ 'you are up next' if e.est == 0 else 'minutes estimated wait' }}</span></div>
+        </div>
+        <div class="people" aria-hidden="true">{% for i in range([e.ahead, 8] | min) %}<i class="{{ 'srv' if loop.first and e.serving_token }}"></i>{% endfor %}{% if e.ahead > 8 %}<small>+{{ e.ahead - 8 }}</small>{% endif %}<em>You</em></div>
+      {% endif %}
+    </div>
+    {% if e.status == 'Waiting' %}<form method="post" action="{{ url_for('queue.action') }}" data-confirm="Leave the queue? You will lose your place.">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ e.id }}">
+      <button class="btn danger sm" name="action" value="leave">Leave queue</button></form>{% endif %}
+  </article>
+  {% endfor %}
+
+  <section class="card">
+    <h2>Today's appointments</h2>
+    {% for a in appts %}<div class="appt-row"><div><strong>{{ a.time }}</strong> with {{ a.doctor }}<br><span class="muted">{{ a.note or 'Ready to check in' }}</span></div>
+      {% if a.can_checkin %}<form method="post" action="{{ url_for('queue.checkin') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="appointment_id" value="{{ a.id }}"><button class="btn primary">Check in</button></form>{% endif %}</div>
+    {% else %}<p class="empty">You have no appointments today. <a href="{{ url_for('appointments.index') }}">Book one</a>. Once it is confirmed, you can check in here on the day.</p>{% endfor %}
+  </section>
+
+  {% if history %}<section class="card gap-sm"><h2>Earlier today</h2>
+    {% for h in history %}<p class="appt-row"><span>Token {{ '%02d' | format(h.token) }} with {{ h.doctor }}</span><span class="badge b-{{ h.status | lower | replace(' ', '-') }}">{{ h.status }}</span></p>{% endfor %}</section>{% endif %}
+
+{% elif not doctor %}
+  <p class="empty card">No doctors have been added yet.</p>
+{% else %}
+  <div class="console">
+    <div>
+      <section class="card nowcard">
+        <h2>Now serving</h2>
+        {% if state.serving %}
+          <div class="bigtoken">{{ '%02d' | format(state.serving.token) }}</div>
+          <p><strong>{{ state.serving.patient }}</strong><br><span class="muted">In consultation for {{ state.serving.minutes }} min</span></p>
+          <form method="post" action="{{ url_for('queue.action') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ state.serving.id }}">
+            <button class="btn primary block" name="action" value="complete">Complete consultation</button></form>
+        {% else %}<div class="bigtoken dim">–</div><p class="muted">No one is in consultation.</p>{% endif %}
+        <form method="post" action="{{ url_for('queue.action') }}" class="callform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+          <button class="btn {{ '' if state.serving else 'primary' }} block lg" name="action" value="call" {{ 'disabled' if state.serving or not state.waiting }}>Call next patient</button></form>
+        <p class="small">{% if state.serving %}Complete the current consultation first.{% elif not state.waiting %}No one is waiting.{% else %}Next in line: token {{ '%02d' | format(state.waiting[0].token) }}, {{ state.waiting[0].patient }}.{% endif %}</p>
+        <dl class="mini"><div><dt>Waiting</dt><dd>{{ state.waiting | length }}</dd></div><div><dt>Seen today</dt><dd>{{ stats.done }}</dd></div><div><dt>Average visit</dt><dd>{{ state.avg }} min</dd></div></dl>
+      </section>
+      {% if user.role == 'superadmin' %}
+      <section class="card gap-sm"><h2>Add a walk-in</h2>
+        <form method="post" action="{{ url_for('queue.walkin') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="doctor_id" value="{{ doctor.id }}">
+          <div class="field"><label for="wp">Patient</label><select id="wp" name="patient_id" required><option value="">Select…</option>{% for p in patients %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+          <button class="btn block">Add to queue</button></form></section>
+      {% endif %}
+    </div>
+    <section class="card tablecard"><h2>Waiting ({{ state.waiting | length }})</h2>
+      {% if state.waiting %}<div class="scroll"><table><thead><tr><th>Token</th><th>Patient</th><th>Waited</th><th>Est. wait</th><th></th></tr></thead><tbody>
+        {% for w in state.waiting %}<tr><td data-label="Token"><strong>{{ '%02d' | format(w.token) }}</strong></td><td data-label="Patient">{{ w.patient }}</td><td data-label="Waited">{{ w.waited }} min</td>
+          <td data-label="Est. wait">{{ 'Next' if w.est == 0 else '~' ~ w.est ~ ' min' }}</td>
+          <td class="acts"><form method="post" action="{{ url_for('queue.action') }}" class="inline" data-confirm="Mark this patient as a no-show?"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ w.id }}">
+            <button class="btn sm danger" name="action" value="noshow">No-show</button></form></td></tr>{% endfor %}
+      </tbody></table></div>{% else %}<p class="empty">No one is waiting. Patients appear here when they check in.</p>{% endif %}
+    </section>
+  </div>
+{% endif %}
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

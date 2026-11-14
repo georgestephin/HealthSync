@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% from "claims/_macros.html" import problem %}{% block title %}Recommend treatment{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Recommend treatment</h1><p>{{ appt.patient }}, appointment on {{ appt.date }} at {{ appt.time }}.</p></div></section>
+<div class="wrap page">
+{% if not cov %}
+  <section class="card"><h2>No coverage, treat as self-pay</h2>{{ problem(error) }}
+    <p class="muted">{{ appt.patient }} has not verified a private insurance policy or an Ayushman card, so insurance cannot be used for this treatment.</p>
+    <a class="btn" href="{{ url_for('appointments.index') }}">Back to appointments</a></section>
+{% else %}
+<div class="split">
+  <form method="post" class="card form" novalidate data-once>
+    <h2>Treatment request</h2>{{ problem(error) }}
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field {{ 'has-error' if errors.get('diagnosis') }}"><label for="f-diagnosis">Diagnosis<span class="req"> *</span></label>
+      <input id="f-diagnosis" name="diagnosis" value="{{ values.get('diagnosis', '') }}" required maxlength="200"><small class="err" data-for="diagnosis" role="alert">{{ errors.get('diagnosis', '') }}</small></div>
+    {% if cov.coverageType == 'TPA' %}
+    <div class="field {{ 'has-error' if errors.get('estimatedCost') }}"><label for="f-cost">Estimated cost (₹)<span class="req"> *</span></label>
+      <input id="f-cost" name="estimatedCost" type="number" min="1" step="1" value="{{ values.get('estimatedCost', '') }}" required><small class="err" data-for="estimatedCost" role="alert">{{ errors.get('estimatedCost', '') }}</small></div>
+    {% else %}
+    <div class="field {{ 'has-error' if errors.get('packageCode') }}"><label for="f-package">Package<span class="req"> *</span></label>
+      <select id="f-package" name="packageCode" required data-rate><option value="">Select…</option>
+        {% for p in packages %}<option value="{{ p.code }}" data-rate="{{ p.rate }}" {{ 'selected' if values.get('packageCode') == p.code }}>{{ p.code }} - {{ p.name }} - {{ p.rate | inr }}</option>{% endfor %}</select>
+      <small class="err" data-for="packageCode" role="alert">{{ errors.get('packageCode', '') }}</small></div>
+    <p class="small">Fixed package price: <output id="pkg-rate">–</output></p>
+    {% endif %}
+    <label class="check"><input type="checkbox" name="emergency" {{ 'checked' if values.get('emergency') }}> Emergency (admit now, approval can follow within 24 hours)</label>
+    <div class="row gap-sm"><button class="btn primary">Send for pre-authorization</button><a class="btn" href="{{ url_for('appointments.index') }}">Cancel</a></div>
+  </form>
+  <article class="card covcard"><h2>{{ 'Private insurance (TPA)' if cov.coverageType == 'TPA' else 'Ayushman Bharat' }}</h2>
+    {% if cov.coverageType == 'TPA' %}<dl class="kv"><div><dt>Policy</dt><dd>{{ cov.coverageRef }}</dd></div><div><dt>Balance</dt><dd>{{ cov.balance | inr }}</dd></div><div><dt>Co-pay</dt><dd>{{ cov.coPayPercent }}%</dd></div></dl>
+    {% else %}<dl class="kv"><div><dt>Family balance remaining</dt><dd>{{ cov.remaining | inr }}</dd></div><div><dt>Card</dt><dd>{{ cov.coverageRef }}</dd></div></dl>{% endif %}
+  </article>
+</div>{% endif %}
+</div>{% endblock %}

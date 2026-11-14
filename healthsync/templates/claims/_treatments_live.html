@@ -1,0 +1,12 @@
+{% from "claims/_macros.html" import badge, emergency_badge, payer_name, problem %}
+{{ problem(error) }}
+{% for c in cases %}{% set s = case_status(c) %}
+<a class="casecard" href="{{ url_for('claims.case_detail', case_id=c.id) }}">
+  <div class="cc-id"><span>Case</span><b>#{{ c.id }}</b></div>
+  <div class="cc-main"><h3>{{ c.diagnosis }}</h3><p class="muted">{{ c.doctorName }}, {{ payer_name(c.payerType) }}</p>
+    <p>Estimated cost <strong>{{ c.estimatedCost | inr }}</strong>{% if c.preauth and c.preauth.approvedAmount %}, approved <strong>{{ c.preauth.approvedAmount | inr }}</strong>{% endif %}{% if c.claim %}, insurer pays <strong>{{ c.claim.payerAmount | inr }}</strong>, you pay <strong>{{ c.claim.patientAmount | inr }}</strong>{% endif %}</p>
+    {% if s.note %}<p class="note">{{ s.note }}</p>{% endif %}</div>
+  <div class="cc-side">{{ emergency_badge(c) }}{{ badge(c) }}</div>
+</a>
+{% else %}{% if not error %}<p class="empty card">No treatments yet.</p>{% endif %}{% endfor %}
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

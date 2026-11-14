@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Treatment cases{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Treatment cases</h1><p>Answer desk queries, discharge admitted patients and follow each insurance request.</p></div></section>
+<div class="wrap page"><div data-live="{{ url_for('claims.cases', partial=1) }}" data-interval="8000">{% include "claims/_cases_live.html" %}</div></div>{% endblock %}

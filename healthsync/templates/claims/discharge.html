@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% from "claims/_macros.html" import problem, payer_name, badge %}{% block title %}Discharge{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Discharge</h1><p>Enter the final bill to see who pays what, then confirm.</p></div></section>
+<div class="wrap page">
+{% if not case %}<section class="card">{{ problem(error) }}<a class="btn" href="{{ url_for('claims.cases') }}">Back to cases</a></section>
+{% else %}<div class="split">
+  <article class="card"><h2>Case #{{ case.id }}</h2><p>{{ case.diagnosis }} {{ badge(case) }}</p>
+    <dl class="kv"><div><dt>Patient</dt><dd>{{ case.patientName }}</dd></div><div><dt>Payer</dt><dd>{{ payer_name(case.payerType) }}</dd></div>
+      <div><dt>Estimated cost</dt><dd>{{ case.estimatedCost | inr }}</dd></div><div><dt>Approved</dt><dd>{{ (case.preauth or {}).approvedAmount | inr }}</dd></div></dl></article>
+  <form method="post" class="card form" novalidate data-once data-preview="{{ url_for('claims.preview', case_id=case.id) }}">
+    <h2>Final bill</h2>{{ problem(error) }}
+    {% if case.status == 'ADMITTED' %}
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="field {{ 'has-error' if errors.get('finalBill') }}"><label for="f-bill">Final bill (₹)<span class="req"> *</span></label>
+      <input id="f-bill" name="finalBill" type="number" min="1" step="1" value="{{ values.get('finalBill', '') }}" required><small class="err" data-for="finalBill" role="alert">{{ errors.get('finalBill', '') }}</small></div>
+    <div class="field {{ 'has-error' if errors.get('nonPayable') }}"><label for="f-non">Non-payable items (₹)</label>
+      <input id="f-non" name="nonPayable" type="number" min="0" step="1" value="{{ values.get('nonPayable', '') }}"><small class="err" data-for="nonPayable" role="alert">{{ errors.get('nonPayable', '') }}</small></div>
+    <div class="splitbox" id="split" hidden><dl>
+      <dt>Final bill</dt><dd data-split="finalBill"></dd><dt>Non-payable</dt><dd data-split="nonPayableAmount"></dd><dt>Approved amount</dt><dd data-split="approvedAmount"></dd>
+      {% if case.payerType == 'TPA' %}<dt>Co-pay</dt><dd data-split="coPayPercent" data-suffix="%"></dd>{% endif %}
+      <dt class="total">{{ 'Insurer pays' if case.payerType == 'TPA' else 'Scheme pays' }}</dt><dd class="total" data-split="payerAmount"></dd><dt>Patient pays</dt><dd data-split="patientAmount"></dd></dl>
+      <p class="notice" id="split-warn" hidden>Provisional: the pre-authorization is not approved yet. The desk cannot settle until it is.</p></div>
+    <p class="err" id="split-err" role="alert"></p>
+    <button class="btn primary block">Confirm discharge</button>
+    {% endif %}
+  </form>
+</div>{% endif %}
+</div>{% endblock %}

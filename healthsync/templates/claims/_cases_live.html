@@ -1,0 +1,16 @@
+{% from "claims/_macros.html" import badge, emergency_badge, payer_name, problem %}
+{{ problem(error) }}
+<section class="card tablecard">
+{% if cases %}<div class="scroll"><table><thead><tr><th>Case</th><th>Patient</th><th>Diagnosis</th><th>Payer</th><th>Estimated</th><th>Status</th><th></th></tr></thead><tbody>
+{% for c in cases %}{% set pre = c.preauth or {} %}
+<tr><td data-label="Case"><a href="{{ url_for('claims.case_detail', case_id=c.id) }}">#{{ c.id }}</a></td><td data-label="Patient">{{ c.patientName }}</td><td data-label="Diagnosis">{{ c.diagnosis }}</td>
+  <td data-label="Payer">{{ payer_name(c.payerType) }}</td><td data-label="Estimated">{{ c.estimatedCost | inr }}</td><td data-label="Status">{{ emergency_badge(c) }} {{ badge(c) }}</td>
+  <td class="acts">{% if c.status == 'ADMITTED' %}<a class="btn sm primary" href="{{ url_for('claims.discharge', case_id=c.id) }}">Discharge</a>{% endif %}</td></tr>
+{% if pre.status == 'QUERY' %}<tr class="extra"><td colspan="7"><div class="notice"><strong>The desk asks:</strong> {{ pre.deskRemarks }}
+  <form method="post" action="{{ url_for('claims.reply', preauth_id=pre.id) }}" class="replyform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input name="reply" placeholder="Type your reply to the desk" required maxlength="500" aria-label="Reply to the desk"><button class="btn sm primary">Send reply</button></form></div></td></tr>
+{% elif c.status == 'REJECTED' %}<tr class="extra"><td colspan="7"><div class="notice bad"><strong>Rejected:</strong> {{ pre.deskRemarks or 'No reason was given.' }}</div></td></tr>{% endif %}
+{% endfor %}</tbody></table></div>
+{% elif not error %}<p class="empty">No treatment cases yet. Open <strong>Appointments</strong> and use <em>Recommend treatment</em> on a confirmed appointment.</p>{% endif %}
+</section>
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

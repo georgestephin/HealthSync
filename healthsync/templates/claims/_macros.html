@@ -1,0 +1,6 @@
+{% macro badge(c) %}{% set s = case_status(c) %}<span class="badge b-{{ s.tone }}">{{ s.label }}</span>{% endmacro %}
+{% macro emergency_badge(c) %}{% if c.isEmergency %}<span class="badge b-cancelled">Emergency</span>{% endif %}{% endmacro %}
+{% macro chip(s) %}<span class="badge b-{{ {'SUBMITTED':'pending','QUERY':'pending','APPROVED':'confirmed','SETTLED':'confirmed','REJECTED':'cancelled'}.get(s, '') }}">{{ s | title }}</span>{% endmacro %}
+{% macro payer_name(t) %}{{ 'Private insurance (TPA)' if t == 'TPA' else 'Ayushman Bharat' }}{% endmacro %}
+{% macro problem(error) %}{% if error %}<div class="flash error" role="alert">{{ error }}</div>{% endif %}{% endmacro %}
+{% macro steps(c) %}<ol class="stepper" aria-label="Progress">{% for s in case_steps(c) %}<li class="{{ s.state }}"><i>{{ loop.index }}</i><span>{{ s.label }}</span></li>{% endfor %}</ol>{% endmacro %}

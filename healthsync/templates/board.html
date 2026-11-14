@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Live queue{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Live outpatient queue</h1><p>See who is being served and how many people are waiting for each doctor today.</p></div></section>
+<div class="wrap page">
+  <div data-live="{{ url_for('queue.board', partial=1) }}" data-interval="8000">{% include "_queue_board.html" %}</div>
+  <p class="gap-sm">{% if user.role == 'patient' %}Have a confirmed appointment today? <a href="{{ url_for('queue.index') }}">Check in from My queue.</a>{% else %}<a href="{{ url_for('queue.index') }}">Open the queue console.</a>{% endif %}</p>
+</div>{% endblock %}

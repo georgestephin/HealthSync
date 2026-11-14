@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% from "_macros.html" import fields_html %}{% block title %}{{ title }}{% endblock %}
+{% block content %}<div class="authwrap">
+  <aside class="auth-side"><svg viewBox="0 0 600 130" preserveAspectRatio="none" aria-hidden="true"><path d="M0 70h210l22-34 28 70 26-54 16 16h298" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg><div>
+    <h2>Your care, on one screen.</h2>
+    <ul class="assure"><li>Book and track appointments</li><li>See which wards have free beds</li><li>Send feedback to the hospital team</li></ul>
+  </div></aside>
+  <div class="auth-main">
+    <form method="post" class="form authform" novalidate>
+      <h1>{{ title }}</h1>
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ next }}">
+      {{ fields_html(fields, vals, errs) }}
+      <button class="btn primary block lg">{{ submit }}</button>
+      <p class="center alt">{{ alt[0] }} <a href="{{ alt[2] }}">{{ alt[1] }}</a></p>
+    </form>
+    {% if demo_groups %}<section class="demo" aria-label="Demo accounts"><h2>Demo accounts</h2>
+      {% for g in demo_groups %}<details class="demo-group" open><summary>{{ g.title }} <span>{{ g.rows | length }}</span></summary>
+        <div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Password</th></tr></thead><tbody>
+        {% set ns = namespace(dept='') %}
+        {% for r in g.rows %}
+          {% if r.dept and r.dept != ns.dept %}{% set ns.dept = r.dept %}<tr class="dept-row"><td colspan="3">{{ r.dept }}</td></tr>{% endif %}
+          <tr class="pick" tabindex="0" role="button" data-email="{{ r.email }}" data-password="{{ r.password }}" title="Click to fill the login form">
+            <td>{{ r.name }}{% if r.note %} <span class="muted">({{ r.note }})</span>{% endif %}</td><td>{{ r.email }}</td><td>{{ r.password }}</td></tr>
+        {% endfor %}</tbody></table></div></details>{% endfor %}
+    </section>{% endif %}
+  </div>
+</div>{% endblock %}

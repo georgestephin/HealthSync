@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ 'My queue' if mode == 'patient' else 'Queue console' }}{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap">
+  <h1>{{ 'My queue' if mode == 'patient' else 'Queue console' }}</h1>
+  <p>{{ 'Check in on the day of your visit and watch your place in line update live.' if mode == 'patient' else ('Call patients in order, finish consultations and add walk-ins. Everyone is seen first come, first served.' if user.role == 'superadmin' else 'Call patients in order and finish consultations. Everyone is seen first come, first served.') }}</p>
+</div></section>
+<div class="wrap page">
+  {% if mode == 'staff' and not locked and doctors | length > 1 %}
+  <form method="get" class="qpick"><label for="doc">Doctor</label>
+    <select id="doc" name="doctor" data-autosubmit>{% for d in doctors %}<option value="{{ d.id }}" {{ 'selected' if d.id == sel }}>{{ d.name }} ({{ d.specialty }})</option>{% endfor %}</select></form>
+  {% endif %}
+  <div data-live="{{ url_for('queue.index', partial=1, doctor=sel) }}" data-interval="{{ 8000 if mode == 'patient' else 12000 }}">{% include "_queue_live.html" %}</div>
+</div>{% endblock %}

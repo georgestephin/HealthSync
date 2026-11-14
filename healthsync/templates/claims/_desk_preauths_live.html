@@ -1,0 +1,25 @@
+{% from "claims/_macros.html" import chip, emergency_badge, problem %}
+{{ problem(error) }}
+<section class="card tablecard">
+{% if rows %}<div class="scroll"><table><thead><tr><th>Id</th><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Requested</th><th>Approved</th><th>Status</th><th>Notes</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr>
+  <td data-label="Id">#{{ r.id }}</td><td data-label="Patient">{{ r.case.patientName }}<br><span class="muted small">{{ r.case.coverageRef }}</span></td><td data-label="Doctor">{{ r.case.doctorName }}</td>
+  <td data-label="Diagnosis">{{ r.case.diagnosis }}{% if r.case.packageCode %}<br><span class="muted small">{{ r.case.packageCode }}</span>{% endif %}</td>
+  <td data-label="Requested">{{ r.requestedAmount | inr }}</td><td data-label="Approved">{{ r.approvedAmount | inr }}</td>
+  <td data-label="Status">{{ chip(r.status) }} {{ emergency_badge(r.case) }}{% if r.isOverdue %} <span class="badge b-cancelled">Overdue</span>{% endif %}</td>
+  <td data-label="Notes" class="small">{% if r.deskRemarks %}<div>Desk: {{ r.deskRemarks }}</div>{% endif %}{% if r.hospitalReply %}<div>Hospital: {{ r.hospitalReply }}</div>{% endif %}{% if r.postApprovalDue %}<div class="muted">Due {{ r.postApprovalDue | stamp }}</div>{% endif %}</td>
+  <td class="acts">
+  {% if r.status == 'SUBMITTED' %}
+    <details class="act"><summary class="btn sm primary">Approve</summary><form method="post" action="{{ url_for('claims.desk_approve', preauth_id=r.id) }}" class="actform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ status }}">
+      {% if user.role == 'tpa_desk' %}<label>Approved amount (₹)<input type="number" name="approvedAmount" min="1" max="{{ r.requestedAmount }}" value="{{ r.requestedAmount }}" required></label>{% else %}<p class="small muted">The package price is fixed, so no amount is needed.</p>{% endif %}
+      <label>Remarks<input name="remarks" placeholder="Approved" maxlength="200"></label><button class="btn sm primary">Confirm approval</button></form></details>
+    <details class="act"><summary class="btn sm">Query</summary><form method="post" action="{{ url_for('claims.desk_query', preauth_id=r.id) }}" class="actform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ status }}">
+      <label>What do you need?<textarea name="remarks" rows="2" required maxlength="300"></textarea></label><button class="btn sm primary">Send query</button></form></details>
+  {% elif r.status == 'QUERY' %}<span class="small muted">Waiting for hospital</span>{% endif %}
+  {% if r.status in ('SUBMITTED', 'QUERY') %}
+    <details class="act"><summary class="btn sm danger">Reject</summary><form method="post" action="{{ url_for('claims.desk_reject', preauth_id=r.id) }}" class="actform"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="status" value="{{ status }}">
+      <label>Reason<textarea name="reason" rows="2" required maxlength="300"></textarea></label><button class="btn sm danger">Confirm rejection</button></form></details>{% endif %}
+  </td></tr>{% endfor %}</tbody></table></div>
+{% elif not error %}<p class="empty">Nothing here for this status.</p>{% endif %}
+</section>
+<p class="updated">Updated {{ updated }}. This page refreshes automatically.</p>

@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% from "_macros.html" import badge %}{% block title %}Dashboard{% endblock %}
+{% block content %}<section class="banner"><div class="wrap"><h1>Welcome back, {{ user.name }}</h1><p>Signed in as <em class="role r-{{ user.role }}">{{ user.role }}</em>. Here is what needs your attention.</p></div></section>
+<div class="wrap page">
+  <div class="stats">{% for label, v, ep in stats %}<a class="card stat" href="{{ url_for(ep) }}"><strong>{{ v }}</strong><span>{{ label }}</span></a>{% endfor %}</div>
+  <div class="split {{ 'wide' if show_appts else 'single' }}">
+    {% if show_appts %}<section class="card tablecard"><h2>Upcoming appointments</h2>
+      {% if rows %}<div class="scroll"><table><thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Doctor</th><th>Status</th></tr></thead><tbody>
+        {% for r in rows %}<tr><td data-label="Date">{{ r.date }}</td><td data-label="Time">{{ r.time }}</td><td data-label="Patient">{{ r.patient }}</td><td data-label="Doctor">{{ r.doctor }}</td><td data-label="Status">{{ badge(r.status) }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="empty">Nothing scheduled. <a href="{{ url_for('appointments.index') }}">Open appointments</a></p>{% endif %}
+    </section>{% endif %}
+    <section class="card"><h2>Quick actions</h2><ul class="plain actions">
+      {% for label, ep in links %}<li><a class="btn block" href="{{ url_for(ep) }}">{{ label }}</a></li>{% endfor %}</ul></section>
+  </div>
+</div>{% endblock %}

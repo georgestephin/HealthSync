@@ -1,0 +1,33 @@
+{% macro fields_html(fields, vals, errs) %}
+{% for f in fields %}{% set n = f.name %}
+<div class="field{{ ' has-error' if errs.get(n) }}">
+  <label for="f-{{ n }}">{{ f.label }}{% if f.required %}<span class="req" aria-hidden="true"> *</span>{% endif %}</label>
+  {% if f.type == 'select' %}
+  <select id="f-{{ n }}" name="{{ n }}" {{ 'required' if f.required }}>
+    <option value="">{{ 'Select…' if f.required else 'None' }}</option>
+    {% for k, l in f.opts %}<option value="{{ k }}" {{ 'selected' if (vals.get(n) | string) == (k | string) }}>{{ l }}</option>{% endfor %}
+  </select>
+  {% elif f.type == 'textarea' %}
+  <textarea id="f-{{ n }}" name="{{ n }}" rows="3" maxlength="500" {{ 'required' if f.required }} {% if f.minlength %}minlength="{{ f.minlength }}"{% endif %}>{{ vals.get(n) or '' }}</textarea>
+  {% else %}
+  <input id="f-{{ n }}" name="{{ n }}" type="{{ f.type }}" {% if f.type != 'password' and vals.get(n) is not none %}value="{{ vals.get(n) }}"{% endif %}
+    {{ 'required' if f.required }} {% if f.pattern %}pattern="{{ f.pattern }}"{% endif %} {% if f.hint %}data-hint="{{ f.hint }}"{% endif %}
+    {% if f.min is defined %}min="{{ f.min }}"{% endif %} {% if f.max is defined %}max="{{ f.max }}"{% endif %}
+    {% if f.minlength %}minlength="{{ f.minlength }}"{% endif %} {% if f.autocomplete %}autocomplete="{{ f.autocomplete }}"{% endif %}
+    {% if f.match %}data-match="{{ f.match }}"{% endif %}>
+  {% endif %}
+  <small class="err" data-for="{{ n }}" role="alert">{{ errs.get(n, '') }}</small>
+</div>
+{% endfor %}
+{% endmacro %}
+
+{% macro badge(v) %}<span class="badge b-{{ (v or '') | lower }}">{{ v }}</span>{% endmacro %}
+
+{% macro action_buttons(acts, id) %}
+{% for a in acts %}
+  {% if a.url %}<a class="btn sm" href="{{ a.url }}">{{ a.label }}</a>
+  {% else %}<form method="post" class="inline"{% if a.confirm %} data-confirm="{{ a.confirm }}"{% endif %}>
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="id" value="{{ id }}">
+    <button name="_action" value="{{ a.action }}" class="btn sm {{ a.kind }}">{{ a.label }}</button></form>{% endif %}
+{% endfor %}
+{% endmacro %}

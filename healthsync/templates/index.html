@@ -1,0 +1,66 @@
+{% extends "base.html" %}{% from "_icons.html" import icon, dept_icon, dept_class, stars, initials %}
+{% block content %}
+{% set is_staff = user and user.role != 'patient' %}
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <h1>Care you can book in a minute.</h1>
+      <p class="lead">Choose a specialist, pick a time, and follow your appointment from request to visit. Ward availability and emergency care are always one click away.</p>
+      <div class="row">{% if is_staff %}<a class="btn white lg" href="{{ url_for('dashboard.index') }}">Open your dashboard</a>{% else %}<a class="btn white lg" href="{{ url_for('appointments.index') }}">Book an appointment</a>{% endif %}<a class="btn ghost lg" href="{{ url_for('public.services') }}">See our services</a></div>
+      <ul class="assure"><li>{{ icon('shield') }}Registered specialists</li><li>{{ icon('clock') }}Emergency care 24 hours</li><li>{{ icon('bed') }}Live ward beds</li></ul>
+    </div>
+    <aside class="sign" aria-label="Ward directory with live bed availability">
+      <div class="sign-head"><h2>Ward directory</h2><span class="live"><i></i>Live</span></div>
+      {% for b in beds %}{% set free = b.total - b.occupied %}{% set st = 'full' if free == 0 else ('limited' if free * 5 <= b.total else 'ok') %}
+      <div class="sign-row"><span class="w">{{ b.ward }}</span><span class="st st-{{ st }}">{{ {'full':'Full','limited':'Limited','ok':'Available'}[st] }}</span><span class="num">{{ free }}<small> / {{ b.total }}</small></span></div>
+      {% endfor %}
+      <p class="sign-foot"><strong>{{ free_beds }}</strong> beds free across {{ beds | length }} wards. <a href="{{ url_for('records.beds') }}">Open the full directory</a></p>
+    </aside>
+  </div>
+</section>
+
+<section class="wrap"><div class="desk">
+  {% if user and user.role == 'admin' %}<a href="{{ url_for('appointments.index') }}">{{ icon('calendar') }}<span><strong>Confirm appointments</strong>Review new patient requests</span></a>
+  {% elif user and user.role in ('tpa_desk','pmjay_desk') %}<a href="{{ url_for('claims.desk_preauths') }}">{{ icon('shield') }}<span><strong>Review pre-authorizations</strong>Decide insurance requests</span></a>
+  {% elif is_staff %}<a href="{{ url_for('appointments.index') }}">{{ icon('calendar') }}<span><strong>Manage appointments</strong>Follow and complete visits</span></a>
+  {% else %}<a href="{{ url_for('appointments.index') }}">{{ icon('calendar') }}<span><strong>Book an appointment</strong>Pick a doctor and a time slot</span></a>{% endif %}
+  <a href="{{ url_for('records.doctors') }}">{{ icon('user') }}<span><strong>Find a doctor</strong>Browse specialists and fees</span></a>
+  <a href="{{ url_for('records.beds') }}">{{ icon('bed') }}<span><strong>Check bed availability</strong>See free beds by ward</span></a>
+  <a class="urgent" href="tel:112">{{ icon('phone') }}<span><strong>Emergency: call 112</strong>Or come to our ER directly</span></a>
+</div></section>
+
+{% if departments %}<section class="section"><div class="wrap">
+  <div class="section-head"><h2>Departments</h2><p>Specialist care across the departments available on HealthSync.</p></div>
+  <div class="depts">{% for d in departments %}<a class="dept {{ dept_class(d.specialty) }}" href="{{ url_for('public.department', slug=d.slug) }}">{{ dept_icon(d.specialty) }}<strong>{{ d.specialty }}</strong><p>{{ d.info }}</p></a>{% endfor %}</div>
+</div></section>{% endif %}
+
+{% if doctors %}<section class="section tint"><div class="wrap">
+  <div class="section-head"><h2>Our doctors</h2><p>Consultation fees and days are shown up front, so there are no surprises at the desk.</p></div>
+  <div class="dir">{% for d in doctors %}
+    <div class="dir-row {{ dept_class(d.specialty) }}"><span class="av av{{ loop.index0 % 4 }}" aria-hidden="true">{{ initials(d.name) }}</span>
+      <div class="who"><strong>{{ d.name }}</strong><span>{{ d.specialty }}</span></div>
+      <div class="when">{{ icon('clock') }}{{ d.available_days or 'By appointment' }}</div>
+      <div class="fee">₹{{ d.fee }}</div>
+      {% if not is_staff %}<a class="btn sm" href="{{ url_for('appointments.index') }}">Book a visit</a>{% else %}<span></span>{% endif %}</div>{% endfor %}</div>
+  <p class="more"><a href="{{ url_for('records.doctors') }}">See all doctors</a></p>
+</div></section>{% endif %}
+
+<section class="section"><div class="wrap">
+  <div class="section-head"><h2>How booking works</h2></div>
+  <ol class="flow">
+    <li><h3>Create your account</h3><p>Register with your phone number and basic details. It takes about a minute.</p></li>
+    <li><h3>Choose a doctor and a time</h3><p>Slots that are already taken are blocked, so what you pick is yours.</p></li>
+    <li><h3>Follow your appointment</h3><p>Watch it move from Pending to Confirmed to Completed, or cancel if plans change.</p></li>
+  </ol>
+</div></section>
+
+{% if reviews %}<section class="section tint"><div class="wrap">
+  <div class="section-head"><h2>What patients tell us</h2></div>
+  <div class="voices">{% for r in reviews %}<blockquote>{{ stars(r.rating) }}<p>{{ r.message }}</p><footer>{{ r.name or 'A patient' }}, {{ r.day }}</footer></blockquote>{% endfor %}</div>
+</div></section>{% endif %}
+
+<section class="er"><div class="wrap">
+  <div><h2>In an emergency, do not wait for an appointment.</h2><p>Call 112 or come straight to the Emergency Department. It is staffed every hour of every day.</p></div>
+  <a class="er-call" href="tel:112">{{ icon('phone') }}112</a>
+</div></section>
+{% endblock %}

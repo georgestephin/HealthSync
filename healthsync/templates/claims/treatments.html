@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}My treatments{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>My treatments</h1><p>Follow each treatment from the doctor's request to the insurance settlement.</p></div></section>
+<div class="wrap page"><div data-live="{{ url_for('claims.treatments', partial=1) }}" data-interval="8000">{% include "claims/_treatments_live.html" %}</div></div>{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}Reports{% endblock %}
+{% macro card(title, note='', wide=False) %}<section class="card chartcard{{ ' wide' if wide }}"><h2>{{ title }}</h2>{% if note %}<p class="muted small">{{ note }}</p>{% endif %}{{ caller() }}</section>{% endmacro %}
+{% macro donut_card(title, d, note='') %}{% call card(title, note) %}<div class="donutbox">{{ d.svg }}<ul class="legend">{% for l in d.legend %}<li><i class="sw {{ l.cls }}"></i>{{ l.label }}<b>{{ l.value }}</b><span>{{ l.pct }}%</span></li>{% endfor %}</ul></div>{% endcall %}{% endmacro %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>Reports and analytics</h1><p>Charts built from live data. Hover over any bar for the exact figure.</p></div></section>
+<div class="wrap page">
+  <div class="stats">{% for label, v in tiles %}<div class="card stat"><strong>{{ v }}</strong><span>{{ label }}</span></div>{% endfor %}
+    <div class="card stat"><strong>{{ occupancy }}%</strong><span>Bed occupancy</span></div></div>
+  <div class="reports">
+    {% call card('Appointments per month', 'Last six months', True) %}{{ charts.monthly }}{% endcall %}
+    {{ donut_card('Appointments by status', charts.status) }}
+    {% call card('Appointments by department', 'All time') %}{{ charts.department }}{% endcall %}
+    {% call card('Busiest doctors', 'Appointments per doctor, top eight') %}{{ charts.doctors }}{% endcall %}
+    {% call card('Ward occupancy', 'Share of beds in use') %}{{ charts.wards }}<p class="gap-sm"><a href="{{ url_for('records.beds') }}">Update bed counts</a></p>{% endcall %}
+    {% call card("Today's queue by department", 'Patients checked in today') %}{{ charts.queue }}
+      <ul class="legend inline"><li><i class="sw c1"></i>Seen</li><li><i class="sw c0"></i>In consultation</li><li><i class="sw c2"></i>Waiting</li></ul>{% endcall %}
+    {% call card('Patient ratings', 'Number of reviews by star rating') %}{{ charts.ratings }}{% endcall %}
+    {{ donut_card('Users by role', charts.roles) }}
+    {% call card('Low-stock items', 'At or below the reorder level', True) %}
+      {% for i in low %}<div class="bar-row"><span>{{ i.item }}</span><b class="low">{{ i.qty }} {{ i.unit }} (reorder at {{ i.reorder_level }})</b></div>
+      {% else %}<p class="empty">All items are above their reorder level.</p>{% endfor %}
+      <p><a href="{{ url_for('records.inventory') }}">Open inventory</a></p>{% endcall %}
+  </div>
+</div>{% endblock %}

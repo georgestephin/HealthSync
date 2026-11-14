@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}Claims{% endblock %}
+{% block content %}
+<section class="banner"><div class="wrap"><h1>{{ title }}: claims</h1><p>Settle claims whose pre-authorization is approved, or reject them with a reason.</p></div></section>
+<div class="wrap page">
+  <form method="get" class="qpick"><label for="st">Status</label><select id="st" name="status" data-autosubmit>
+    {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if s == status }}>{{ s | title }}</option>{% endfor %}<option value="ALL" {{ 'selected' if status == 'ALL' }}>All</option></select></form>
+  <div data-live="{{ url_for('claims.desk_claims', partial=1, status=status) }}" data-interval="5000">{% include "claims/_desk_claims_live.html" %}</div>
+</div>{% endblock %}
