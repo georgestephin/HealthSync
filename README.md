@@ -1,4 +1,4 @@
-# HealthSync: Smart Hospital Management System
+# HealthSync
 
 HealthSync is a role-based hospital portal for patients, doctors, admins and super admins. Patients book appointments, check in to a live outpatient queue and see ward bed availability. Admins confirm new appointments and manage doctors, users, inventory and bed counts, and see the analytics charts. Doctors run their own queue and complete visits. The super admin oversees everything, including patient records, and can use **View as** on any account.
 
